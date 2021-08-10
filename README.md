@@ -43,7 +43,9 @@ I also host an unmodified copy of the latest EditVR release at [https://inkforvr
 
 ## Painting a Mesh
 
-Still to do!
+[Watch on YouTube.](https://youtu.be/TUjPk21zkUw)
+
+[![Painting a Mesh](/screenshots/paint.png)](https://youtu.be/TUjPk21zkUw)
 
 # EditVR vs "Ink for VR"
 
