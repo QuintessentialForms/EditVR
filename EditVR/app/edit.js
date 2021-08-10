@@ -1,3 +1,0 @@
-const edit = {};
-
-export { edit };
