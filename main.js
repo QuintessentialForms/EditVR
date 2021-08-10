@@ -1,171 +1,3 @@
-//GOAL: Move to feature-complete beta (good art, local save, good ui)
-//LACK: polypaint: no brush select, polymesh: grab edge, grab face
-//BONUS GOAL: Subscription (+cloud save)
-//LACK: user accounts, stripe
-
-//TODO: grab edge, grab face 
-
-//TODO: mesh export
-//  - w/ triangle textures / custom import
-//  - w/ mesh data only in real format
-
-
-//TODO: layers panel
-//TODO: make undo registrations layer-specific
-//TODO: settings panel
-
-//TODO: add layer-id to undo registration
-//TODO: brush mesh layer-specific undo 'skips' other-layer sequence-end points (added from share)
-
-/* 
-    Trivial Update
-    (IFF: mutated index.html)
-    Replace inkforvr.app/v/{current}/index.html
-    (index.html cacheing is disabled)
-
-    Trivial Update
-    (IFF: created new file)
-    Add file to inkforvr.app/v/{current}/...
-    (cache will not be a problem)
-
-    Minor Update Checklist
-    (IFF: mutated only main.js)
-    1. replace inkforvr.app/v/{current}/main.js
-    2. change inkforvr.app/v/{current}/index.html : 'main.js' -> 'main.js?v=[++N]'
-    3. change inkforvr.app/v/{current}/index.html : 'version x' -> 'version x.++'
-
-    Minor Sub-File Update Checklist
-    (IFF: mutated existing file whose load url is specified in main.js)
-    1. replace inkforvr.app/v/{current}/...
-    2. change main.js : 'file.ext' -> 'file.ext?v=[++N]'
-    3. replace inkforvr.app/v/{current}/main.js
-    4. change inkforvr.app/v/{current}/index.html : 'main.js' -> 'main.js?v=[++N]'
-    5. change inkforvr.app/v/{current}/index.html : 'version x' -> 'version x.++'
-
-    Deploy Update Checklist
-    (IFF: mutated existing file not loaded from main.js | changed app.js)
-
-	1. on inkforvr.app, copy-paste new 
-		'inforvr.app/v/{new}' webapp version folder
-		'apps/v/{new}' nodeapp version folder
-    2. comment out window.edit
-	3. copy-replace:
-		- main.js
-		- /brushes (if needed), /ui (if needed)
-		- if necessary, copy-replace: build/three.module.js
-		- if necessary, copy-replace: examples/jsm/loaders/GLTFLoader.js
-		- if necessary, copy-replace: examples/jsm/textures/HTMLTexture.js
-	?. Server-side unchanged? Update ifv.a/rdr.js and done.
-	4. copy-replace:
-		- apps/v/{new}/app.js
-	5. update ifv.a/rdr.php and rdr.js with new port, new app version
-	6. browser go ifv.a/v/{new}/api, check console, wait for successful wss server launch
-	7. ssh
-		> cd app/v/{old}
-		> cat output.log
-		: PID...
-		> kill -15 PID
-		- app broadcasts: 'Update Available'
-		- app stops accepting new user signups
-        - app immediately backs up users file to AWS S3
-        - app will exit(0) when last user disconnects
-    8. After app exists, delete its node_modules/aws-sdk (>60MB)
-    
-*/
-
-/*
-    
-    - How do layers work?
-        - pipeline picks are layer-specific
-        - pipeline adds/updates are layer-specific
-        - TODO: undos will be layer-specific
-        - TODO: every pipeline datum will have a two-part 32bit ID
-        - layer.owned: self, sharer_id
-        - Claim Layer:
-            -> click layer
-                -> owned? switch
-                -> else send claim request
-                    -> sharer: active? reject
-                    -> sharer: else permit
-                        -> sharer: mark not owned
-                        -> sharer: on appended buffer:
-                            -> loop own buffer, hide layer
-                            -> append shared appended
-                            -> loop shared, unhide layer
-                            -> update own instancer
-                            -> update shared instancer
-            <- get response
-                -> rejected? notify
-                -> permitted? mark layer owned, map
-            -> map layer:
-                - loop shared buffer
-                    -> itemize layer points
-                    -> hide layer points
-                    -> update shared instancer
-                - loop own buffer
-                    -> update layer points from items
-                        -> flag item updated
-                    -> loop over items
-                        -> if not updated, append own buffer
-                        -> send appended buffer
-                    -> update own instancer
-
-    - Share: 1 pipeline instancer per sharer
-
-    - Layers enable shared drawing:
-        - Only 1 user per layer
-        - switch to a layer
-        - switch will fail (lock + account icon) if other on layer
-        - every undo registration must include layer id
-        - undo will fail (with notice, need alert system) if other on undo's layer
-
-    - experiment with LOD distance decision (at 0.005 now)
-    - really need working layers
-    - stats panel
-    - clay modeling mesh?
-    - user login
-    - save local, open local
-    - settings panel: 
-        show floor grid slider
-        enable / disable y-move
-        copyright statement for Ink for VR
-        license for 3JS
-        
-    - art
-        - How to draw in 3d?
-    - layer thumbnails
-    - design ui panels / implement remaining
-    - clean up controller setup function (can move comments elsewhere / to notes)
-    - in addPoint / vertexShader,
-        try GPU-loading chain color too, mixing to it w/ displacement vector length
-        passing mixed color to fragment shader
-        (on multi-colored smooth line, seeing little ellipses of different colors)
-*/
-
-/* 
-Quest Chrome Debug:
-
-1) In companion app, enable usb debugging under devices[quest]->Developer Mode->Toggle[on/off]
-	(might have to have this settings panel open / phone app connected to headset to debug)
-2) In CMD, cd to C:\Users\blaze\Downloads\platform-tools_r31.0.2-windows\platform-tools
-3) In CMD run > adb devices (headset should be listed if connected via USB)
-4) In headset, allow debugging (checked 'always', but might have to again anyway)
-5) In headset browser, navigate to page
-6) In Chrome on PC, go to chrome://inspect/#devices
-7) Wait a few seconds for device to appear, with tabs list
-8) Click 'inspect' under tab, wait for dev tools to launch and connect to tab
-
- */
-
-/* 
-
-
-    Note, rendering to 32-bit color channels:
-        https://developer.mozilla.org/en-US/docs/Web/API/EXT_color_buffer_float
-        var ext = gl.getExtension('EXT_color_buffer_float');
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA32F, 256, 256);
-
-*/
 
 /* 
     WARNING: Using modified version of 3JS:
@@ -372,19 +204,6 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
 
                 }
 
-                /* edit.pipelines.brush.setup();
-    
-                edit.tools.airbrush.setup();
-                edit.tools.erase.setup();
-                edit.tools.draw.setup();
-    
-                edit.pipelines.mesh.setup();
-    
-                edit.tools.polymesh.setup();
-                edit.tools.polypaint.setup();
-    
-                edit.tools.polypaint.setup(); */
-    
                 edit.ui.addAlphaPanels();
     
                 edit.ui.activeToolName = settings.initial_active_tool;
@@ -1941,9 +1760,6 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         //local open configured from edit.ui.prepareLocalOpen( open )
                         //'button-local-open': () => {},
 
-                        //unimplemented
-                        //'button-local-new': () => { console.log( "Clicked new." ); },
-                        //'button-local-export': () => { console.log( "Clicked export." ); },
                     }
     
     
@@ -2314,8 +2130,6 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                             if( grabbedTrack !== null ) {
                                 focus.panel = panel;
                                 focus.track = grabbedTrack;
-                                //focus.dx = grabbedTrack.x - x;
-                                //focus.dy = grabbedTrack.y - y;
     
                                 //absolute track coordinate selection:
                                 focus.dx = 0;
@@ -2401,9 +2215,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                 thickness: 0.10,
                 pixelScale: 0.0003,
                 outlineScale: 0.5,
-                repaintThrottle: 300, //wait 300ms after HTML repaint
-                extractPosition: panel => {                
-                    //const m = panel.mesh.matrix.elements;
+                extractPosition: panel => {
                     const m = panel.mesh.matrixWorld.elements;
                     const xAxisLengthSquared = panel.vectors.xAxis.lengthSquared;
                     const yAxisLengthSquared = panel.vectors.yAxis.lengthSquared;
@@ -2446,10 +2258,8 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         v.z = s.z; 
                     }
     
-                    //const forwardAxis = {x:0,y:0.25,z:1};
                     normalize(forwardAxis);
                     set( xAxis , cross( forwardAxis , { x:0,y:-1,z:0} ) );
-                    //xAxis.z += 0.25;
                     normalize( xAxis );
                     set( yAxis , cross( xAxis , forwardAxis ) );
                     normalize( yAxis );
@@ -2564,7 +2374,6 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                             //collect button marquees
     
                             const { left: floatLeft, top: floatTop, width: floatWidth, height: floatHeight } = getComputedStyle( button.element, '::after' );
-                            //will we get computed style, client rects for off-screen elements???
     
                             const left = parseInt( parentLeft + (1*floatLeft.replace( 'px', '' )) );
                             const top = parseInt( parentTop + (1*floatTop.replace( 'px', '' )) );
@@ -2711,8 +2520,6 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         if( repainted ) {
 
                             //update manually / immediately? why not.
-                            //const ctx = htmlTexture.image.getContext( '2d' );
-                            //const d = { isDataTexture: true, image: ctx.getImageData( 0, 0, htmlTexture.image.width, htmlTexture.image.height ) };
                             const d = { image: htmlTexture.image };
 
                             edit.threejs.renderer.copyTextureToTexture( { x: 0, y: 0 }, d, htmlTexture );
@@ -3080,7 +2887,6 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         return track;
                     },
                     arc: ( centerX , centerY , radius , headRadius ) => {
-                        //const hr2 = headRadius**2;
                         let f = 0;
                         const track = {
                             hovering: {}, visible: true,
@@ -3647,7 +3453,6 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
             
                 const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, settings.near, settings.far );
                 camera.position.set( 0, 1.6, 3 );
-                //scene.add( camera );
                 container.add( camera );
                 edit.world.camera = camera;
         
@@ -4438,11 +4243,15 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                             addRingVertex( 1.0 );
                         }
                     },
-                    'overdraw': ()=>{
+                    'polygon': ()=>{
                         /* 
                             Concept:
-                                A new stroke maps its flow onto the flow of previously drawn lines.
-                                Those lines are updated to a weighted average of the two.
+                                Provide control of polygon side count, provide control of side concave V.
+                                Concave V = 0: flat-sided polygon (triangle, square, octagon).
+                                Concave V = D: (star-shaped)
+                                    - splits each side in half
+                                    - translates the median toward the origin by D
+                                    - translates the vertex away from the origin by D
                         */
                     },
                     'broad': ()=>{
@@ -7325,7 +7134,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
     
                         const indexI = i * 3;
 
-                        //TODO: remove indices //...I don't know why I wrote that...
+                        //TODO: remove indices array, set render mode to triangles
                         faceIndicesArray[ indexI + 0 ] = indexI + 0;
                         faceIndicesArray[ indexI + 1 ] = indexI + 1;
                         faceIndicesArray[ indexI + 2 ] = indexI + 2;
@@ -9641,7 +9450,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
             },
         },
         math: {
-            //quaternion to matrix, see: https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
+            //IDK why you'd need it, but for quaternion to matrix, see: https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
             vector: {
                 cross: (a,b) => ({
                     x: a.y*b.z - a.z*b.y,
