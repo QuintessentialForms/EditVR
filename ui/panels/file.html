@@ -1,0 +1,234 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>File Panel</title>
+        <!-- 
+
+            - animations and transitions must never be used
+
+            - javascript must not attach the onload event
+
+            - handlers may be created here or in the app, whichever is preferrable
+
+            - buttons must use class .button
+            - Active: a button affording a non-interactive state must specify it using class .active
+                - to specify 1 or more initially active button(s), set attribute 'initial-active'
+                - area of active style paint must not overlap any marquees
+            - Hover: button hover styles must use class .marquee and apply an ::after with a width & height
+                demarkating the boundaries of the button's highlight style paint
+                - marquee boundaries must not overlap
+                - all buttons with hover effects must be on-screen on first paint
+                - to show/hide panels with hovering buttons, please use multiple ui panels or use panel.captureButtonImageData()
+                - hovering buttons must not scroll
+
+            - toggles cannot have hover styles
+
+            - the first track in the HTML tree must appear in the first paint
+            - all tracks must be identical except in position
+            - all tracks must begin at the leftmost end of their line
+            - all tracks' heads' hovers must use class .marquee
+            - the head's .marquee highlight style must be fully contained within the head's client rectangle
+        
+            - all buttons and tracks must have the class '.marquee' set before the page load event fires
+            - marquees must be added in html, not dynamically from JS
+
+            - no button or track may have the '.active' class set when the page load event fires
+
+        -->
+        <style id="styles">
+            @import url( 'panels.css' );
+
+            body {
+
+                margin:0;
+                padding:0;
+
+            }
+
+            .panel {
+
+                background-color: var(--theme-panel-color);
+                color: var(--theme-text-color);
+                font-family: var(--theme-font-family);
+                font-size: 2rem;
+
+                position: absolute;
+                left:0;
+                top:0;
+
+                width: 461px;
+                height: 675px;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: stretch;
+                align-items: stretch;
+                
+                text-align: center;
+
+                --margin: 37.5px;
+                --header-height: calc( 2.8 * var(--margin) );
+                --layer-height: calc( 3.67 * var(--margin) );
+                --border-thickness: 3px;
+
+                box-sizing: border-box;
+
+                padding: var(--margin);
+            }
+
+            /* applied to container outside of VR */
+            .file-panel {
+
+                position: absolute;
+                left: calc( 50vw - 230px );
+                top: calc( 50vh - 337px );
+                width: 461px;
+                height: 675px;
+
+                box-shadow: 0 0 10vw 0 black;
+
+            }
+
+            /* applied to screen beneath container outside of VR */
+            .screen-blur {
+
+                filter: blur( 7px );
+
+            }
+
+            .header {
+
+                height: var(--margin);
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+
+            }
+
+            #button-toggle-vr {
+
+                margin-top: calc( 0.67 * var(--margin ) );
+                margin-bottom: calc( 0.33 * var(--margin ) );
+
+            }
+
+            .button {
+
+                display: flex;
+                flex-direction: row;
+                justify-content: stretch;
+                align-items: center;
+                height: var(--header-height);
+
+            }
+
+            .button > span {
+
+                flex-grow: 1;
+                text-align: center;
+
+            }
+
+            .button.marquee::after {
+
+                margin:0;
+                padding:0;
+                width:100%;
+                height:100%;
+                border:0;
+
+            }
+
+            .download-buttons.locked > .button {
+
+                pointer-events: none;
+                filter: blur( 3px );
+                opacity: 0.25;
+
+
+            }
+
+            .download-buttons {
+
+                position: relative;
+                width: 386px;
+                height: 420px;
+
+            }
+            .download-buttons > .lock-overlay {
+
+                visibility: hidden;
+                pointer-events: none;
+
+            }
+            .download-buttons.locked > .lock-overlay {
+
+                visibility: visible;
+                pointer-events: all;
+
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+
+                background-color: rgba(255,255,255,0.125);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+
+                text-shadow: 
+                    0 0 5px var(--theme-panel-color),
+                    0 0 10px var(--theme-panel-color),
+                    0 0 20px var(--theme-panel-color);
+
+            }
+
+            #outline {
+
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 461px;
+                height: 544px;
+
+                opacity:0.1;
+
+            }
+
+        </style>
+    </head>
+    <body>
+        
+        <div class='panel'>
+
+            <div class='header'>
+                <div class='icon' style='opacity:0.5; font-size:2.33rem;'>Files</div>
+            </div>
+
+            <div id='button-toggle-vr' class='button marquee'><span>Leave VR</span></div>
+            <div class='download-buttons locked'>
+                <div delay-capture id='button-local-save' class='button'><span>Save</span></div>
+                <div delay-capture id='button-local-open' class='button'><span>Open</span></div>
+                <div class='lock-overlay'>Leave VR to save or open files</div>
+            </div>
+
+        </div>
+
+        <script type='text/javascript'>
+
+            Array.from( document.querySelectorAll( ".button" ) ).forEach( button => {
+
+                button.onmouseenter = () => button.classList.add( 'marquee' );
+                button.onmouseleave = () => button.classList.remove( 'marquee' );
+
+            } );
+
+        </script>
+
+    </body>
+</html>

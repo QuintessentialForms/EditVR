@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Control Panel</title>
+        <!-- 
+
+            - animations and transitions must never be used
+
+            - javascript must not attach the onload event
+
+            - handlers may be created here or in the app, whichever is preferrable
+
+            - buttons must use class .button
+            - Active: a button affording a non-interactive state must specify it using class .active
+                - to specify 1 or more initially active button(s), set attribute 'initial-active'
+                - area of active style paint must not overlap any marquees
+            - Hover: button hover styles must use class .marquee and apply an ::after with a width & height
+                demarkating the boundaries of the button's highlight style paint
+                - marquee boundaries must not overlap
+                - all buttons with hover effects must be on-screen on first paint
+                - to show/hide panels with hovering buttons, please use multiple ui panels or use panel.captureButtonImageData()
+                - hovering buttons must not scroll
+
+            - toggles cannot have hover styles
+
+            - the first track in the HTML tree must appear in the first paint
+            - all tracks must be identical except in position
+            - all tracks must begin at the leftmost end of their line
+            - all tracks' heads' hovers must use class .marquee
+            - the head's .marquee highlight style must be fully contained within the head's client rectangle
+        
+            - all buttons and tracks must have the class '.marquee' set before the page load event fires
+            - marquees must be added in html, not dynamically from JS
+
+            - no button or track may have the '.active' class set when the page load event fires
+
+        -->
+        
+        <link rel="stylesheet" type="text/css" href="panels.css">
+        <style>
+
+            body {
+
+                width: 291px;
+                min-width: 291px;
+                max-width: 291px;
+                height: 1824px;
+                min-height: 1824px;
+                max-height: 1824px;
+
+                margin:0;
+                padding:0;
+                overflow: hidden;
+
+            }
+
+            .panel {
+
+                background-color: var(--theme-panel-color);
+                color: var(--theme-text-color);
+                font-family: var(--theme-font-family);
+
+                position: absolute;
+                left:0;
+                top:0;
+
+                width: 291px;
+                min-width: 291px;
+                max-width: 291px;
+                height: 1824px;
+                min-height: 1824px;
+                max-height: 1824px;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: stretch;
+                align-items: stretch;
+                
+                text-align: center;
+
+                --margin: 37.5px;
+                --header-height: calc( 2.8 * var(--margin) );
+                --layer-height: calc( 3.67 * var(--margin) );
+                --border-thickness: 3px;
+
+                box-sizing: border-box;
+
+                padding: var(--margin);
+            }
+
+            #outline {
+
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 291px;
+                height: 1824px;
+
+                opacity:0.1;
+
+            }
+
+            .button {
+
+                width: 100%;
+                height: var(--layer-height);
+                flex-grow: 0;
+                flex-direction: row;
+                justify-content: center;
+
+            }
+
+            .button.marquee::after {
+
+                left: -8%;
+                width: 57%;
+                height: 80%;
+
+            }
+
+            .icon:first-child {
+
+                margin-right: calc( 0.33 * var(--margin) );
+
+            }
+
+            .icon {
+
+                flex-grow: 0;
+                flex-shrink: 0;
+                width: 50%;
+
+            }
+
+            .spacer {
+
+                flex-grow: 1;
+
+            }
+
+            .label {
+
+                height: calc( var(--layer-height) - ( 0.33 * var(--margin) ) );
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                padding-top: calc( 0.67 * var(--margin) );
+
+                font-size: 2rem;
+
+            }
+
+            .toggle {
+
+                margin: 0 calc( 1.167 * var(--margin) );
+                height: calc( 1.67 * var(--margin) );
+
+                border-radius: var(--margin);
+                border:var(--border-thickness) solid var(--theme-text-color);
+
+                align-self: stretch;
+
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+
+            }
+
+            .toggle > .nub {
+
+                height: calc( 1.33 * var(--margin) );
+                width: calc( 1.33 * var(--margin) );
+                margin: calc( 0.167 * var(--margin) );
+                border-radius: var(--margin);
+
+                background-color: var(--theme-text-color);
+
+                opacity: 0.25;
+
+            }
+
+            .toggle.right > .nub {
+
+                margin-left: calc( 1.837 * var(--margin) );
+                opacity: 1.0;
+
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class='panel'>
+
+            <div id='button-panel-art' class='button marquee'>
+                <div class='icon'>Art</div>
+                <div class='icon'>☑</div>
+            </div>
+
+            <div id='button-panel-color' class='button marquee'>
+                <div class='icon'>Color</div>
+                <div class='icon'>☑</div>
+            </div>
+
+            <div id='button-panel-file' class='button marquee'>
+                <div class='icon'>Files</div>
+                <div class='icon'>☐</div>
+            </div>
+
+            <!-- <div id='button-panel-layers' class='button marquee'>
+                <div class='icon'><img src='icons/control-layers.webp'></div>
+                <div class='icon'><img src='icons/eye-closed.webp'></div>
+            </div>
+
+            <div id='button-panel-references' class='button marquee'>
+                <div class='icon'><img src='icons/control-references.webp'></div>
+                <div class='icon'><img src='icons/eye-closed.webp'></div>
+            </div>
+
+            <div id='button-panel-camera' class='button marquee'>
+                <div class='icon'><img src='icons/control-camera.webp'></div>
+                <div class='icon'><img src='icons/eye-closed.webp'></div>
+            </div>
+
+            <div id='button-panel-settings' class='button marquee'>
+                <div class='icon'><img src='icons/control-settings.webp'></div>
+                <div class='icon'><img src='icons/eye-closed.webp'></div>
+            </div>
+
+            <div id='button-panel-stats' class='button marquee'>
+                <div class='icon'><img src='icons/control-stats.webp'></div>
+                <div class='icon'><img src='icons/eye-closed.webp'></div>
+            </div> -->
+
+            <div class='spacer'></div>
+
+            <div id='toggle-follow' class='toggle right'>
+                <div class='nub'></div>
+            </div>
+            <div class='label'>Follow</div>
+
+        </div>
+
+        <script type='text/javascript'>
+
+            Array.from( document.querySelectorAll( ".button" ) ).forEach( button => {
+
+                button.onclick = () => {
+
+                    const i = button.querySelectorAll( '.icon' )[ 1 ];
+
+                    if( i.textContent.indexOf( '☐' ) > -1 ) i.textContent = '☑';
+
+                    else i.textContent = '☐';
+
+                }
+
+                button.onmouseenter = () => button.classList.add( 'marquee' );
+                button.onmouseleave = () => button.classList.remove( 'marquee' );
+
+            } );
+
+            const toggle = document.querySelector( '.toggle' );
+            toggle.onclick = state => {
+
+                if( state === 'off' ) return toggle.classList.remove( 'right' );
+
+                if( state === 'on' ) return toggle.classList.add( 'right' );
+
+
+                const on = toggle.classList.contains( 'right' );
+
+                if( on ) toggle.classList.remove( 'right' );
+
+                if( ! on ) toggle.classList.add( 'right' );
+
+            }
+
+        </script>
+
+    </body>
+</html>

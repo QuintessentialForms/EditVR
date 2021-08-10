@@ -1,0 +1,544 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Art Panel</title>
+        <link rel="stylesheet" type="text/css" href="panels.css">
+        <!-- 
+
+            - animations and transitions must never be used
+
+            - javascript must not attach the onload event
+
+            - handlers may be created here or in the app, whichever is preferrable
+
+            - buttons must use class .button
+            - Active: a button affording a non-interactive state must specify it using class .active
+                - to specify 1 or more initially active button(s), set attribute 'initial-active'
+                - area of active style paint must not overlap any marquees
+            - Hover: button hover styles must use class .marquee and apply an ::after with a width & height
+                demarkating the boundaries of the button's highlight style paint
+                - marquee boundaries must not overlap
+                - all buttons with hover effects must be on-screen on first paint
+                - hover buttons hidden on first paint must set 'delay-capture' 
+                    and use panel.captureButtonImageData() immediately after first paint
+                - hovering buttons must not scroll
+
+
+            - toggles cannot have hover styles
+
+            - the first track in the HTML tree must appear in the first paint
+            - all tracks must be identical except in position
+            - all tracks must begin at the leftmost end of their line
+            - all tracks' heads' hovers must use class .marquee
+            - the head's .marquee highlight style must be fully contained within the head's client rectangle
+        
+            - all buttons and tracks must have the class '.marquee' set before the page load event fires
+            - marquees must be added in html, not dynamically from JS
+
+            - no button or track may have the '.active' class set when the page load event fires
+
+        -->
+
+        <style>
+
+            body {
+
+                margin:0;
+                padding:0;
+
+            }
+
+            .panel {
+
+                transform-origin: top left;
+
+                background-color: var(--theme-panel-color);
+                color: var(--theme-text-color);
+                font-family: var(--theme-font-family);
+
+                position: absolute;
+                left:0;
+                top:0;
+
+                width: 927px;
+                height: 1348px;
+
+                display: grid;
+                grid-template-rows: auto 1fr;
+                grid-template-columns: auto 1fr;
+                grid-template-areas:
+                    "head head"
+                    "menu controls";
+                justify-content: stretch;
+                align-content: stretch;
+                
+                text-align: center;
+
+                --margin: 37.5px;
+                --header-height: calc( 2.8 * var(--margin) );
+                --layer-height: calc( 3.67 * var(--margin) );
+                --border-thickness: 3px;
+
+                box-sizing: border-box;
+
+            }
+
+            #outline {
+
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 927px;
+                height: 1348px;
+
+                opacity:0.1;
+
+            }
+
+            .header {
+
+                grid-area: head;
+
+                height: var(--header-height);
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+
+                padding-left: var(--margin);
+
+            }
+
+            .menu {
+
+                grid-area: menu;
+
+                width: var(--layer-height);
+                padding: calc( 0.67 * var(--margin) );
+                justify-self: stretch;
+                align-self: stretch;
+
+            }
+
+            .menu > .spacer {
+
+                height: calc( 0.67 * var(--margin) );
+
+            }
+
+            .menu > .button {
+
+                height: var(--header-height);
+
+            }
+
+            .menu > .button.active {
+
+                padding: 0 calc( 2 * var(--margin) );
+                margin-left: calc( -0.167 * var(--margin) );
+                border-right: calc( 0.5 * var(--margin) ) solid var(--theme-text-color);
+
+            }
+
+            .menu > .button.marquee::after {
+
+                width: calc( var(--layer-height) - ( 0.33 * var(--margin) ) );
+                height: calc( var(--layer-height) - ( 1 * var(--margin) ) );
+
+                mix-blend-mode: difference;
+
+            }
+
+            .menu > .button.active::after {
+
+                content: '';
+
+                position: absolute;
+
+                width: calc( var(--layer-height) - ( 0.33 * var(--margin) ) );
+                height: calc( var(--layer-height) - ( 1 * var(--margin) ) );
+
+                margin:var(--margin);
+
+                border:var(--border-thickness) solid var(--theme-text-color);
+
+                background-color: var(--theme-text-color);
+
+                mix-blend-mode: normal;
+
+                opacity: 0.125;
+
+            }
+
+
+
+            .controls {
+
+                grid-area: controls;
+
+                padding: var(--margin);
+
+                padding-top: calc( 1.67 * var(--margin) );
+
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+
+                visibility: hidden;
+                pointer-events: none;
+
+            }
+
+            .controls.active {
+
+                visibility: visible;
+                pointer-events: all;
+
+            }
+
+            .controls > .ribbon {
+
+                height: var(--layer-height);
+
+                display:flex;
+                flex-direction: row;
+                justify-content: space-evenly;
+                align-items: center;
+
+            }
+
+            #controls-polypaint > .spacer {
+
+                flex-shrink: 0;
+                height: var(--margin);
+
+            }
+
+            .button.guide {
+
+                width:var(--header-height);
+                height:var(--header-height);
+
+            }
+
+            .button.guide.marquee::after {
+
+                width:var(--header-height);
+                height:var(--header-height);
+
+            }
+
+            .button.guide.active {
+
+                padding-top: calc( 0.37 * var(--margin) );
+                padding-bottom: calc( 0.87 * var(--margin) );
+                border-top: calc( 0.5 * var(--margin) ) solid var(--theme-text-color);
+
+            }
+            .button.guide.active::after {
+
+                content: '';
+
+                position: absolute;
+
+                width: var(--header-height);
+                height: var(--header-height);
+
+                margin:var(--margin);
+
+                border:var(--border-thickness) solid var(--theme-text-color);
+
+                background-color: var(--theme-text-color);
+
+                mix-blend-mode: normal;
+
+                opacity: 0.125;
+
+            }
+
+
+            .track {
+
+                height: calc( 3 * var(--margin) );
+
+                margin-bottom: var(--margin);
+
+                display: flex;
+                flex-direction: column;
+                justify-content: stretch;
+                align-items: stretch;
+
+            }
+
+            .track > .label {
+
+                flex-grow: 1;
+
+                font-size: 2rem;
+                text-align: left;
+                margin: 0 calc( 0.67 * var(--margin) );
+
+                text-align: center;
+
+            }
+
+            .track > .line {
+
+                margin: calc( 0.67 * var(--margin) );
+                height: var(--border-thickness);
+                position: relative;
+
+                overflow: visible;
+                flex-shrink: 0;
+                background-color: var(--theme-text-color);
+
+            }
+
+            .track > .line > .head {
+
+                position: absolute;
+                left:0;
+                top:calc( -0.84 * var(--margin) );
+                height: calc( 1.67 * var(--margin) );
+                width: calc( 1.67 * var(--margin) );
+
+                border-radius: var(--margin);
+                border: var(--border-thickness) solid var(--theme-text-color);
+
+                background-color: var(--theme-panel-color);
+
+            }
+
+            .track > .line > .head.marquee {
+
+                background-color: var(--theme-text-color);
+
+            }
+
+            #track-polypaint-blend > .label {
+
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+
+            }
+        </style>
+
+    </head>
+    <body>
+        <div class='panel'>
+
+            <div class='header'>
+                <div class='icon' style='opacity:0.5; font-size:2.33rem;'>Art</div>
+            </div>
+
+            <div class='menu'>
+
+                <div class='spacer'></div>
+
+                <div initial-active id='button-tool-draw' tab='draw' class='button marquee'>Ink</div>
+                <div id='button-tool-airbrush' tab='airbrush' class='button marquee'>Air<br>Brush</div>
+                <div id='button-tool-erase' tab='erase' class='button marquee'>Erase</div>
+
+                <div class='spacer'></div>
+
+                <div id='button-tool-polymesh' tab='polymesh' class='button marquee'>Mesh</div>
+                <div id='button-tool-polypaint' tab='polypaint' class='button marquee'>Paint</div>
+                <div id='button-tool-polydelete' tab='polydelete' class='button marquee'>Delete</div>
+
+            </div>
+
+            <!-- brush pipeline -->
+
+            <div id='controls-draw' initial-active class='controls active tab' tab='draw' style='display: flex;'>
+
+                <div class='ribbon'>
+                    <div initial-active id='button-draw-guide-free' class='button guide marquee' tab='draw' guide='free'>Draw</div>
+                    <div id='button-draw-guide-line' class='button guide marquee' tab='draw' guide='line'>Line</div>
+                    <div id='button-draw-guide-ellipse' class='button guide marquee' tab='draw' guide='ellipse'>Circle</div>
+                </div>
+
+                <div class='tracks'>
+                    <div id='track-draw-size' class='track'>
+                        <div class='label'>Size</div>
+                        <div class='line'><div class='head marquee' tab='draw' option='size'></div></div>
+                    </div>
+                    <div id='track-draw-spacing' class='track'>
+                        <div class='label'>Spacing</div>
+                        <div class='line'><div class='head marquee' tab='draw' option='spacing'></div></div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div id='controls-airbrush' class='controls tab' tab='airbrush' style='display: flex;'>
+
+                <div class='ribbon'></div>
+
+                <div class='tracks'>
+                    <div id='track-airbrush-size' class='track'>
+                        <div class='label'>Size</div>
+                        <div class='line'><div class='head marquee' tab='airbrush' option='size'></div></div>
+                    </div>
+                    <div id='track-airbrush-opacity' class='track'>
+                        <div class='label'>Opacity</div>
+                        <div class='line'><div class='head marquee' tab='airbrush' option='opacity'></div></div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div id='controls-erase' class='controls tab' tab='erase' style='display: flex;'>
+                
+                <div class='ribbon'></div>
+
+                <div class='tracks'>
+                    <div id='track-erase-size' class='track'>
+                        <div class='label'>Size</div>
+                        <div class='line'><div class='head marquee' tab='erase' option='size'></div></div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- polymesh pipeline -->
+
+            <div id='controls-polymesh' class='controls tab' tab='polymesh' style='display: flex;'>
+                
+                <div class='ribbon'>
+                    <div delay-capture initial-active id='button-polymesh-guide-quad' class='button guide' tab='polymesh' guide='quad'>Quad</div>
+                    <div delay-capture id='button-polymesh-guide-triangle' class='button guide' tab='polymesh' guide='triangle'>Triangle</div>
+                </div>
+
+                <div class='tracks'>
+                    <div id='track-polymesh-snapRadius' class='track'>
+                        <div class='label'>Snap Radius</div>
+                        <div class='line'><div class='head marquee' tab='polymesh' option='snapRadius'></div></div>
+                    </div>
+                    <div id='track-polymesh-vertex' class='track'>
+                        <div class='label'>Dot Size</div>
+                        <div class='line'><div class='head marquee' tab='polymesh' option='vertex'></div></div>
+                    </div>
+                    <div id='track-polymesh-edge' class='track'>
+                        <div class='label'>Edge Thickness</div>
+                        <div class='line'><div class='head marquee' tab='polymesh' option='edge'></div></div>
+                    </div>
+                    <!--div id='track-polymesh-contrast' class='track'>
+                        <div class='label'>Edge/Texture Contrast</div>
+                        <div class='line'><div class='head'></div></div>
+                    </div-->
+                </div>
+
+            </div>
+
+
+            <div id='controls-polypaint' class='controls tab' tab='polypaint' style='display: flex;'>
+
+                <!-- TODO: brush image preview / size -->
+                <!-- TODO: brush image drop down selector -->
+
+                <div class='ribbon'></div>
+
+                <div class='tracks'>
+                    <div id='track-polypaint-width' class='track'>
+                        <div class='label'>Size</div>
+                        <div class='line'><div class='head marquee' tab='polypaint' option='width'></div></div>
+                    </div>
+                    <div id='track-polypaint-height' class='track'>
+                        <div class='label'>Aspect Ratio</div>
+                        <div class='line'><div class='head marquee' tab='polypaint' option='height'></div></div>
+                    </div>
+                    <div id='track-polypaint-thickness' class='track'>
+                        <div class='label'>Thickness</div>
+                        <div class='line'><div class='head marquee' tab='polypaint' option='thickness'></div></div>
+                    </div>
+                </div>
+
+                <div class='spacer'></div>
+
+                <div class='tracks'>
+                    <div id='track-polypaint-opacity' class='track'>
+                        <div class='label'>Opacity</div>
+                        <div class='line'><div class='head marquee' tab='polypaint' option='opacity'></div></div>
+                    </div>
+                    <div id='track-polypaint-blend' class='track'>
+                        <div class='label'><span>Painting</span> <span>Blending</span></div>
+                        <div class='line'><div class='head marquee' tab='polypaint' option='blend'></div></div>
+                    </div>
+                    <div id='track-polypaint-smear' class='track'>
+                        <div class='label'>Smearing</div>
+                        <div class='line'><div class='head marquee' tab='polypaint' option='smear'></div></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id='controls-polydelete' class='controls tab' tab='polydelete' style='display: flex;'>
+
+                <div class='ribbon'></div>
+
+            </div>
+
+        </div>
+
+        <script type='text/javascript'>
+
+            const buttons = Array.from( document.querySelector( '.menu' ).querySelectorAll( '.button' ) );
+            const controls = Array.from( document.querySelectorAll( '.controls' ) );
+
+            buttons.forEach( button => {
+
+                const tab = button.getAttribute( 'tab' );
+
+                const control = document.querySelector( '#controls-' + tab );
+
+                button.onclick = () => {
+
+                    buttons.forEach( b => b.classList.remove( 'active' ) );
+                    button.classList.add( 'active' );
+
+                    controls.forEach( c => c.classList.remove( 'active' ) );
+                    control.classList.add( 'active' );
+
+                }
+
+                button.onmouseenter = () => button.classList.add( 'marquee' );
+                button.onmouseleave = () => button.classList.remove( 'marquee' );
+
+            } );
+
+            const tracks = Array.from( document.querySelectorAll( '.head' ) );
+
+            tracks.forEach( track => {
+
+                track.onmouseenter = () => track.classList.add( 'marquee' );
+                track.onmouseleave = () => track.classList.remove( 'marquee' );
+
+            } );
+
+            const guideButtons = Array.from( document.querySelectorAll( '.button.guide' ) );
+
+            for( const guideButton of guideButtons ) {
+
+                guideButton.onclick = () => {
+
+                    guideButtons.forEach( b => b.classList.remove( 'active' ) );
+                    guideButton.classList.add( 'active' );
+
+                }
+
+                guideButton.onmouseenter = () => guideButton.classList.add( 'marquee' );
+                guideButton.onmouseleave = () => guideButton.classList.remove( 'marquee' );
+
+            }
+
+        </script>
+
+    </body>
+</html>
