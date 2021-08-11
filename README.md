@@ -47,6 +47,14 @@ I also host an unmodified copy of the latest EditVR release at [https://inkforvr
 
 [![Painting a Mesh](/screenshots/paint.png)](https://youtu.be/TUjPk21zkUw)
 
+## Rendering with the Camera
+
+Still to do!
+
+## Saving to the Cloud
+
+Still to do!
+
 # EditVR vs "Ink for VR"
 
 ## Differences
