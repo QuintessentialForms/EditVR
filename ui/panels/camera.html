@@ -1,0 +1,291 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Camera Panel</title>
+        <!-- 
+
+            - animations and transitions must never be used
+
+            - javascript must not attach the onload event
+
+            - handlers may be created here or in the app, whichever is preferrable
+
+            - buttons must use class .button
+            - Active: a button affording a non-interactive state must specify it using class .active
+                - to specify 1 or more initially active button(s), set attribute 'initial-active'
+                - area of active style paint must not overlap any marquees
+            - Hover: button hover styles must use class .marquee and apply an ::after with a width & height
+                demarkating the boundaries of the button's highlight style paint
+                - marquee boundaries must not overlap
+                - all buttons with hover effects must be on-screen on first paint
+                - to show/hide panels with hovering buttons, please use multiple ui panels or use panel.captureButtonImageData()
+                - hovering buttons must not scroll
+
+            - toggles cannot have hover styles
+
+            - the first track in the HTML tree must appear in the first paint
+            - all tracks must be identical except in position
+            - all tracks must begin at the leftmost end of their line
+            - all tracks' heads' hovers must use class .marquee
+            - the head's .marquee highlight style must be fully contained within the head's client rectangle
+        
+            - all buttons and tracks must have the class '.marquee' set before the page load event fires
+            - marquees must be added in html, not dynamically from JS
+
+            - no button or track may have the '.active' class set when the page load event fires
+
+        -->
+        <link rel="stylesheet" type="text/css" href="panels.css">
+        <style>
+
+            body {
+
+                margin:0;
+                padding:0;
+
+            }
+
+            .panel {
+
+                background-color: var(--theme-panel-color);
+                color: var(--theme-text-color);
+                font-family: var(--theme-font-family);
+
+                position: absolute;
+                left:0;
+                top:0;
+
+                width: 717px;
+                height: 700px;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: stretch;
+                align-items: stretch;
+                
+                text-align: center;
+
+                --margin: 37.5px;
+                --header-height: calc( 2.8 * var(--margin) );
+                --layer-height: calc( 3.67 * var(--margin) );
+                --border-thickness: 3px;
+
+            }
+
+            .preview {
+
+                width: 640px;
+                height: 360px;
+                box-sizing: content-box;
+                border: 4px solid var(--theme-text-color);
+                align-self: center;
+                margin: 0 var(--margin);
+                margin-top: calc( var(--margin) - 4px );
+                margin-left: calc( var(--margin) - 4px );
+
+            }
+
+            .notice {
+
+                font-size: 1.67rem;
+                margin: var(--margin);
+                margin-top: 0;
+                padding: 0;
+                min-height: 32px;
+
+            }
+
+            .notice > img {
+
+                height: calc( 0.55 * var(--margin) );
+
+            }
+            
+            #outline {
+
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 590px;
+                height: 1106px;
+
+                opacity: 0.1;
+
+            }
+
+            .button {
+
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+
+                position: relative;
+
+                min-width:var(--margin);
+                height:var(--margin);
+                padding: calc( 0.33 * var(--margin) );
+
+                font-size: 2rem;
+
+            }
+
+            .header > .button.active {
+
+                
+                margin-bottom: calc( 0.167 * var(--margin) );
+                border-top: calc( 0.167 * var(--margin) ) solid var(--theme-text-color);
+
+            }
+
+            .button.active::after {
+
+                content: '';
+
+                position: absolute;
+
+                margin:0;
+
+                border:var(--border-thickness) solid var(--theme-text-color);
+
+                background-color: var(--theme-text-color);
+
+                mix-blend-mode: normal;
+
+                opacity: 0.125;
+
+                width:100%;
+                height:100%;
+
+            }
+
+
+            .button.marquee::after {
+
+                content: '';
+
+                position: absolute;
+
+                width:100%;
+                height:100%;
+
+                margin:0;
+
+                border:var(--border-thickness) solid var(--theme-text-color);
+
+                background-color: var(--theme-text-color);
+
+                mix-blend-mode: difference;
+
+            }
+
+            .header {
+
+                height: calc( var(--header-height) + 0.67rem );
+
+                flex-grow: 0;
+                flex-shrink: 0;
+
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+
+            }
+
+            .header.center {
+
+                justify-content: center;
+
+            }
+
+            .header > .icon {
+
+                height: var(--header-height);
+                width: var(--header-height);
+
+                margin: 0.67rem;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+
+                position: relative;
+
+            }
+
+            .header > .button {
+
+                height: var(--margin);
+                min-width: var(--margin);
+                margin: 0 calc( 0.5 * var(--margin) );
+                flex-grow: 0;
+
+            }
+
+            .header > .button:last-child {
+
+                height: initial;
+                width: initial;
+                margin-left: calc( 2 * var(--margin) );
+
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class='panel'>
+
+
+            <div class='header'>
+                <div class='icon' style='margin-left:calc( 1.33 * var(--margin) ); font-size:2.33rem;'>Camera</div>
+            </div>
+
+            <div class='preview'></div>
+
+            <div class='header center'>
+                <div id='button-resolution-720p' initial-active class='button guide marquee'>720p</div>
+                <div id='button-resolution-1080p' class='button marquee'>1080p</div>
+                <div id='button-resolution-4k' class='button marquee'>4k</div>
+                <div id='button-resolution-8k' class='button marquee'>8k</div>
+                <div id="button-capture" class='button marquee'>Capture</div>
+            </div>
+
+            <div class='notice'>&nbsp;</div>
+
+        </div>
+
+        <script>
+
+            const buttons = Array.from( document.querySelectorAll( '.button' ) );
+
+            for( const button of buttons ) {
+
+                button.onmouseenter = () => button.classList.add( 'marquee' );
+                button.onmouseleave = () => button.classList.remove( 'marquee' );
+
+                button.onclick = () => {
+
+                    if( button.id.indexOf( 'button-resolution-' ) !== 0 ) {
+
+                        document.querySelector( ".notice" ).innerHTML =
+                            `Captured. Download from the files panel.`;
+
+                        return;
+
+                    }
+
+                    buttons.forEach( b => b.classList.remove( 'active' ) );
+                    button.classList.add( 'active' );
+
+                }
+
+            }
+
+        </script>
+
+    </body>
+</html>
