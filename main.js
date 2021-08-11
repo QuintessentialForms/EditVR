@@ -1,23 +1,23 @@
 
 /* 
-    WARNING: Using modified version of 3JS:
+WARNING: Using modified version of 3JS:
 
 
-    original ThreeJS:
+original ThreeJS:
 
-	function vertexAttribPointer( index, size, type, normalized, stride, offset ) {
+function vertexAttribPointer( index, size, type, normalized, stride, offset ) {
 
-		if ( capabilities.isWebGL2 === true && ( type === 5124 || type === 5125 )  ) {
-
-
-    Modified line to enable integer vector:
-
-	function vertexAttribPointer( index, size, type, normalized, stride, offset ) {
-
-		if ( capabilities.isWebGL2 === true && ( type === 5124 || type === 5125 || ( type === 5121 && (! normalized) ) )  ) {
+if ( capabilities.isWebGL2 === true && ( type === 5124 || type === 5125 )  ) {
 
 
- */
+Modified line to enable integer vector:
+
+function vertexAttribPointer( index, size, type, normalized, stride, offset ) {
+
+if ( capabilities.isWebGL2 === true && ( type === 5124 || type === 5125 || ( type === 5121 && (! normalized) ) )  ) {
+
+
+*/
 
 
 import * as THREE from './build/three.module.js';
@@ -43,10 +43,10 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
             'art': true,
             'color': true,
             'file': false,
+            'camera': false,
 
             'layers': false,
             'references': false,
-            'camera': false,
             'settings': false,
             'stats': false,
         },
@@ -55,10 +55,10 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
             'art': false,
             'color': false,
             'file': false,
+            'camera': false,
 
             'layers': true,
             'references': true,
-            'camera': true,
             'settings': true,
             'stats': true,
         },
@@ -910,6 +910,32 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                 }
     
             },
+            downloadLocalCameraFile: () => {
+
+                const a = document.createElement( 'a' );
+                a.style.display = 'none';
+    
+
+                let fileName = 'camera';
+
+                if( edit.ui.panels.cloud && edit.ui.panels.cloud.page.connected )
+                    fileName = edit.ui.panels.cloud.page.files.getEditingName();
+
+                fileName = fileName.replace( /[^a-zA-Z0-9_\-+!() ]/gm, '' ).substring( 0, 248 ) + '.png';
+
+                a.download = fileName;
+
+
+                const url = edit.ui.panels[ 'camera' ].getRenderURL();
+                a.href = url;
+    
+
+                document.body.appendChild( a );
+                a.click();
+                document.body.removeChild( a );
+    
+            },
+
             load: async ( json ) => {
                 
                 const isDataURL = /^data:([a-z]+\/[a-z0-9-+.]+(;[a-z-]+=[a-z0-9-]+)?)?;base64,([a-z0-9+/]+={0,2})$/i;
@@ -1485,7 +1511,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
 
                         tabs.forEach( element => {
                             if( element.getAttribute( 'initial-active' ) !== null ) {
-                             
+                                
                                 const tab = element.getAttribute( 'tab' );
                                 activatedTabs.add( tab );
 
@@ -1680,13 +1706,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         ctx.fillRect(0,height*0.35,width,height*0.3);
     
                         ctx.drawImage( selectorImage , 0 , 0 , width , height );
-    
-                        //dim header icon
-                        ctx.fillStyle = edit.ui.theme.panelColor;
-                        ctx.globalAlpha = 0.5;
-                        ctx.fillRect( 60*os, 60*os, 100*os, 100*os );
-                        ctx.globalAlpha = 1.0;
-    
+
                         //draw track heads
                         for( const track of tracks ) {
                             const lit = (
@@ -1832,6 +1852,13 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         const openButton = outerFilePanel.querySelector( '#button-local-open' );
                         edit.ui.prepareLocalOpen( openButton );
         
+                        //prepare local save button every time we leave vr
+                        //(via inner toggle vr button's click)
+
+                        //prepare local camera save button
+                        const cameraButton = outerFilePanel.querySelector( "#button-local-camera" );
+                        cameraButton.addEventListener( 'click', edit.ui.downloadLocalCameraFile );
+
                     };
     
                     const filePanel = edit.ui.panel.createHTML(
@@ -1849,6 +1876,252 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                     return layersPanel;
 
                 },
+
+
+                "camera": () => {
+
+                    const width = 717;
+                    const height = 700;
+
+                    const buttons = [];
+                    const tracks = [];
+
+                    const previewSize = { width:640, height:360, x:0, y:0 };
+                    let previewRendered = false;
+
+                    const renderPreview = () => {
+
+                        console.log( "Rendering preview." );
+
+                        let currentMaterial;
+                        const visibilities = new Map();
+
+                        //set mesh material
+                        const mesh = edit.pipelines.mesh;
+                        if( mesh.faceMesh.material === mesh.materials[ 'wireframe' ] ) currentMaterial = 'wireframe';
+                        else currentMaterial = 'texture';
+                        mesh.useMaterial( 'texture' );
+
+                        //hide non-art-scene meshes
+                        const { scene, artScene } = edit.world;
+
+                        for( const mesh of scene.children ) {
+
+                            visibilities.set( mesh, mesh.visible );
+
+                            mesh.visible = artScene.has( mesh );
+
+                        }
+
+                        renderer.render( edit.world.scene, camera );
+
+                        //restore non-art-scene mesh visibilities
+                        for( const [ mesh, visible ] of visibilities )
+                        mesh.visible = visible;
+
+                        //restore mesh material
+                        mesh.useMaterial( currentMaterial );
+
+
+                        previewRendered = true;
+
+                    }
+
+                    const renderer = new THREE.WebGLRenderer();
+                    renderer.setPixelRatio( 1 );
+                    renderer.setSize( previewSize.width, previewSize.height );
+                    renderer.outputEncoding = THREE.sRGBEncoding;
+
+
+                    const camera = new THREE.PerspectiveCamera( 145, 1, 0.001, settings.far );
+
+                    const resolutions = {
+                        "720p": {width:1280, height:720},
+                        "1080p": {width:1920, height:1080},
+                        "4k": {width:3840, height:2160},
+                        "8k": {width:7680, height:4320},
+                    }
+
+                    let resolution = "720p";
+
+                    const renderedOutput = document.createElement( "canvas" );
+                    renderedOutput.width = resolutions[ resolution ].width;
+                    renderedOutput.height = resolutions[ resolution ].height;
+                    let firstRendered = false;
+
+                    const renderOutput = async () => {
+
+                        let rWidth, rHeight;
+                        renderer.getSize( { set: (w,h) => (rWidth=w,rHeight=h) } );
+
+                        const { width, height } = resolutions[ resolution ];
+                        
+                        if( rWidth !== width || rHeight !== height );
+                        renderer.setSize( width, height );
+
+                        //set mesh material
+                        const mesh = edit.pipelines.mesh;
+                        let currentMaterial;
+                        if( mesh.faceMesh.material === mesh.materials[ 'wireframe' ] ) currentMaterial = 'wireframe';
+                        else currentMaterial = 'texture';
+                        mesh.useMaterial( 'texture' );
+
+                        //hide non-art-scene meshes
+                        const { scene, artScene } = edit.world;
+                        const visibilities = new Map();
+
+                        for( const mesh of scene.children ) {
+
+                            visibilities.set( mesh, mesh.visible );
+
+                            mesh.visible = artScene.has( mesh );
+
+                        }
+
+                        renderer.render( edit.world.scene, camera );
+
+
+                        //restore non-art-scene mesh visibilities
+                        for( const [ mesh, visible ] of visibilities )
+                            mesh.visible = visible;
+
+                        //restore mesh material
+                        mesh.useMaterial( currentMaterial );
+
+                        //store in render canvas
+                        renderedOutput.width = width;
+                        renderedOutput.height = height;
+                        const ctx = renderedOutput.getContext( "2d" );
+                        ctx.drawImage( renderer.domElement, 0, 0 );
+
+                        if( firstRendered === false ) {
+
+                            cameraPanel.htmlTexture.document.querySelector( ".notice" ).innerHTML =
+                            `Captured. Download from the files panel.`;
+
+                            await cameraPanel.htmlTexture.redrawing;
+                            await cameraPanel.htmlTexture.requestRedraw();
+
+                            edit.threejs.renderer.copyTextureToTexture( {x:0,y:0}, cameraPanel.htmlTexture, cameraPanel.htmlTexture );
+
+                            firstRendered = true;
+
+                        }
+
+                        renderer.setSize( previewSize.width, previewSize.height );
+                        renderPreview();
+                        redraw( cameraPanel );
+
+                    }
+
+                    const getRenderURL = () => renderedOutput.toDataURL();
+                    
+                    const onload = htmlTexture => {
+
+                        /* onload must not cause reflowing changes to htmlTexture */
+    
+                        const previewBox = htmlTexture.document.querySelector( ".preview" );
+                        const rect = previewBox.getClientRects()[ 0 ];
+
+                        const x = parseInt( rect.left );
+                        const y = parseInt( rect.top );
+
+                        previewSize.x = x + 4; //4-pixel border
+                        previewSize.y = width - ( y + 20 ) - ( previewSize.height );
+
+                        const buttonElements = Array.from( htmlTexture.document.querySelectorAll( ".button" ) );
+
+                        for( const element of buttonElements ) {
+
+                            let click = () => {};
+
+                            if( element.id.indexOf( "button-resolution-" ) === 0 ) {
+
+                                const resolution = element.textContent;
+
+                                click = async () => {
+                                    
+                                    cameraPanel.resolution = resolution;
+                                    element.click();
+                                    await htmlTexture.redrawing;
+                                    await htmlTexture.requestRedraw();
+                                    renderPreview();
+                                    redraw( cameraPanel );
+
+                                }
+
+                            } else if( element.id === 'button-capture' ) {
+
+                                click = () => cameraPanel.renderOutput();
+
+                            }
+
+                            const rect = element.getClientRects()[ 0 ];
+    
+                            const left = parseInt( rect.left )
+                            const top = parseInt( rect.top );
+                            const width = parseInt( rect.width );
+                            const height = parseInt( rect.height );
+
+                            const button = edit.ui.button.create.rect( left, top, width, height, click );
+
+                            button.element = element;
+
+                            buttons.push( button );
+
+                        }
+
+                    }
+
+                    const oninit = htmlTexture => {}
+
+                    const redraw = panel => {
+
+                        if( edit.ui.grip.isFocused( panel ) ) {
+                            panel.needsRedraw = true;
+                            renderPreview();
+                        }
+
+                        if( previewRendered === true ) {
+
+                            edit.threejs.renderer.copyTextureToTexture( previewSize, { image: renderer.domElement }, panel.htmlTexture );
+    
+                            previewRendered = false;
+    
+                        }
+
+                        return false; //do not trigger update, updating from here
+
+                    }
+
+                    const cameraPanel = edit.ui.panel.createHTML(
+                        'camera', width, height, tracks, buttons, redraw, 'ui/panels/camera.html', onload, oninit
+                    );
+                    cameraPanel.mesh.add( camera );
+                    camera.rotateY( Math.PI );
+                    camera.rotateZ( Math.PI );
+                    camera.updateMatrix();
+                    camera.zoom = 0.5;
+                    camera.updateProjectionMatrix();
+
+                    cameraPanel.renderer = renderer;
+                    cameraPanel.getRenderURL = getRenderURL;
+                    cameraPanel.renderOutput = renderOutput;
+                    Object.defineProperty( cameraPanel, 'resolution', {
+                        get() { return resolution; },
+                        set( r ) {
+                            if( r === '720p' ) resolution = '720p';
+                            else if( r === '1080p' ) resolution = '1080p';
+                            else if( r === '4k' ) resolution = '4k';
+                            else if( r === '8k' ) resolution = '8k';
+                            else console.error( "Camera: Set unrecognized resolution ", r );
+                        }
+                    })
+
+                    return cameraPanel;
+
+                },
+
             },
             render: ( time ) => {
                 for( let panelName in edit.ui.panels ) {
@@ -1985,6 +2258,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         }
                         if( gripped === true ) {
                             focus.panel = panel;
+                            panel.needsRedraw = true;
                             //const manualMatrix = panel.mesh.matrix.clone();
                             input.controller.attach( panel.mesh );
                             input.controller.attach( panel.transparentMesh );
@@ -2363,8 +2637,8 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
     
                             if( ! button.element || 
                                 ! button.element.classList.contains( 'button' ) ||
-                                  button.element.getAttribute( 'delay-capture' ) !== null )
-                                  continue;
+                                    button.element.getAttribute( 'delay-capture' ) !== null )
+                                    continue;
     
                             const parentRect = button.element.getClientRects()[ 0 ];
     
@@ -2446,8 +2720,8 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
     
                             if( ! button.element || 
                                 ! button.element.classList.contains( 'button' ) ||
-                                  button.element.getAttribute( 'delay-capture' ) !== null )
-                                  continue;
+                                    button.element.getAttribute( 'delay-capture' ) !== null )
+                                    continue;
     
                             //collect normal buttons
     
@@ -3446,6 +3720,8 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                 const scene = new THREE.Scene();
                 scene.background = new THREE.Color( edit.world.color.r, edit.world.color.g, edit.world.color.b );
                 edit.world.scene = scene;
+
+                edit.world.artScene = new Set();
     
                 const container = new THREE.Group();
                 scene.add( container );
@@ -3875,7 +4151,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         const { r,g,b } = closestPoint;
                         edit.ui.panels.color.setRGB( r,g,b );
                     }
-                  
+                    
                     return false; //input not consumed
                 },
         
@@ -4259,7 +4535,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                             Concept:
                                 Draw multiple parallel lines spaced along a line parallel to the cross-axis.
                                 Creates a ribbon trailing through the air
-                         */
+                            */
                     }
                 },
     
@@ -6539,6 +6815,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                     edit.pipelines.brush.instancerBuffer8 = interleavedBuffer8;
                     edit.pipelines.brush.instancerMesh = mesh;
                     edit.world.scene.add( mesh );
+                    edit.world.artScene.add( mesh );
                 },
                 pointsCount: 0,
                 maxPoints: settings.max_points,
@@ -7036,7 +7313,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                                 mesh.triangle.updateFace( face );
     
                                 if( face.texture !== null &&
-                                     //undo replace-vertex on new face had no former triangle :-|
+                                        //undo replace-vertex on new face had no former triangle :-|
                                     formerTriangle !== null )
                                     mesh.resizeTexture( face , formerTriangle );
     
@@ -8998,7 +9275,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
     
                         //  - median: range 0->1 how far the triangle's middle is along its long edge
                         const median = dot( vShort , vLong ) / vLong.lengthSquared;
-                   
+                    
     
                         const widthInt = parseInt( len( vLong ) * resolutionPixelsPerUnitDistance );
     
@@ -9432,6 +9709,7 @@ import { HTMLTexture } from './examples/jsm/textures/HTMLTexture.js';
                         'wireframe': materialWireframe ,
                     };
                     edit.world.scene.add( faceMesh );
+                    edit.world.artScene.add( faceMesh );
                 },
             },
             empty: {
