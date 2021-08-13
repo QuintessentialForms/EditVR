@@ -49,11 +49,15 @@ I also host an unmodified copy of the latest EditVR release at [https://inkforvr
 
 ## Rendering with the Camera
 
-Still to do!
+[Watch on YouTube.](https://youtu.be/UC5urP9gSP0)
+
+[![Rendering with the Camera](/screenshots/camera.png)](https://youtu.be/UC5urP9gSP0)
 
 ## Saving to the Cloud
 
-Still to do!
+[Watch on YouTube.](https://youtu.be/kjjCWE-DrbI)
+
+[![Saving to the Cloud](/screenshots/cloud.png)][https://youtu.be/kjjCWE-DrbI]
 
 # EditVR vs "Ink for VR"
 
