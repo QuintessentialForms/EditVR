@@ -57,7 +57,25 @@ I also host an unmodified copy of the latest EditVR release at [https://inkforvr
 
 [Watch on YouTube.](https://youtu.be/kjjCWE-DrbI)
 
-[![Saving to the Cloud](/screenshots/cloud.png)][https://youtu.be/kjjCWE-DrbI]
+[![Saving to the Cloud](/screenshots/cloud.png)](https://youtu.be/kjjCWE-DrbI)
+
+## Working with Layers
+
+[Watch on YouTube.](https://youtu.be/o2Hs_-kO-J4)
+
+[![Working with Layers](/screenshots/layers.jpgg)](https://youtu.be/o2Hs_-kO-J4)
+
+## Adding References
+
+[Watch on YouTube.](https://youtu.be/_NtgWBNUrAw)
+
+[![Adding Reference Images](/screenshots/references.jpg)](https://youtu.be/_NtgWBNUrAw)
+
+## Controlling Movement Speed
+
+[Watch on YouTube.](https://youtu.be/bMy5wpieFF8)
+
+[![Controlling Precise Movements](/screenshots/speed.jpg)](https://youtu.be/bMy5wpieFF8)
 
 # EditVR vs "Ink for VR"
 
