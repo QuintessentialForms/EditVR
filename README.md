@@ -63,7 +63,7 @@ I also host an unmodified copy of the latest EditVR release at [https://inkforvr
 
 [Watch on YouTube.](https://youtu.be/o2Hs_-kO-J4)
 
-[![Working with Layers](/screenshots/layers.jpgg)](https://youtu.be/o2Hs_-kO-J4)
+[![Working with Layers](/screenshots/layers.jpg)](https://youtu.be/o2Hs_-kO-J4)
 
 ## Adding References
 
